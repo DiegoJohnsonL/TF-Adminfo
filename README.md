@@ -16,4 +16,4 @@
 -  Ejecutar el Archivo TF-Adminfo.R Linea por linea y se podra a seguir todo el proceso implementamos en un solo script.
 
 -  Tambien se puede observar la estructura del proyecto en diferentes directorios en la carpeta "Codigo" en la cual el orden es el siguiente: 
- -  Configuracion -> Preprocesamiuento -> Datos -> Exploracion -> Modelo -> Comunicacion -> Scripts -> Backup 
+   Configuracion -> Preprocesamiuento -> Datos -> Exploracion -> Modelo -> Comunicacion -> Scripts -> Backup 
