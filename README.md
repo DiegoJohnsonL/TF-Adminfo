@@ -18,6 +18,6 @@
 -  Tambien se puede observar la estructura del proyecto en diferentes directorios en la carpeta "Codigo" en la cual el orden es el siguiente: 
    Configuracion -> Preprocesamiento -> Datos -> Exploracion -> Modelo -> Comunicacion -> Scripts -> Backup 
  
-# Links: 
+# Links: (TODO: Add videos)
 
 -
