@@ -1,7 +1,7 @@
-# TF-Adminfo
+# TF-ADMINFO
  Trabajo Final Administracion De la Informacion
  
-# Colaboradores/Integrantes: 
+# COLABORADORES/INTEGRANTES: 
 
 - Renzo
 
@@ -9,7 +9,7 @@
 
 - Joanquin
 
-#  Indicacciones: 
+# INDICACIONES: 
 
 - Descargar el data-set de la pagina https://www.datosabiertos.gob.pe/dataset/informaci%C3%B3n-de-fallecidos-del-sistema-inform%C3%A1tico-nacional-de-defunciones-sinadef-ministerio y agregarlo a la capeta de Data dentro del proyecto.
 
@@ -17,3 +17,7 @@
 
 -  Tambien se puede observar la estructura del proyecto en diferentes directorios en la carpeta "Codigo" en la cual el orden es el siguiente: 
    Configuracion -> Preprocesamiento -> Datos -> Exploracion -> Modelo -> Comunicacion -> Scripts -> Backup 
+ 
+# LINKS: 
+
+-
