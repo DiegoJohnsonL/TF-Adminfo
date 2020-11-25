@@ -1,0 +1,282 @@
+library(RMySQL)
+library(DBI)
+library(wakefield)
+source("Credenciales.R")
+library(rvest)
+library(dplyr)
+library(gsubfn)
+#2.	Crear conexión a la base de datos
+dbCanConnect(drv=driver,host=host,port=port,username=user,password=password,dbname=dbname)
+conexion<-dbConnect(drv=driver,host=host,port=port,username=user,password=password,dbname=dbname)
+dbIsValid(conexion)
+# arreglar error
+dbSendQuery(conexion, "SET GLOBAL local_infile = true")
+
+#3.	Creación de Tablas desde R
+
+## Drop tables
+dbListTables(conexion)
+dbRemoveTable(conexion,"Bus")
+dbRemoveTable(conexion,"Estacion")
+dbRemoveTable(conexion,"Estacion_Ruta")
+dbRemoveTable(conexion,"Ruta")
+dbRemoveTable(conexion,"Tarjeta")
+dbRemoveTable(conexion,"Tipo_Estacion")
+dbRemoveTable(conexion,"Transacciones")
+dbRemoveTable(conexion,"Ubicacion")
+dbRemoveTable(conexion,"Usuario")
+
+
+
+## 1) Tabla Tipo_Estación
+cTipoEstacion <-c(1:3)
+dNombre_Tipo = c("Terminal","Intermedia","Central")
+TipoEstacion = data.frame(cTipoEstacion,dNombre_Tipo)
+
+View(TipoEstacion)
+
+## 2) Tabla Ubicacion
+url<- read_html("http://www.metropolitano.com.pe/conocenos/infraestructura/estaciones/")
+tables <- url %>%
+  html_nodes("table") %>%
+  html_table(fill = TRUE)
+a<-tables[[1]]
+nombres<-c(a$X1,a$X2,a$X3,a$X4)
+nombres<-nombres[!nombres %in% c("","Norte","Sur","Centro")]
+cUbicacion = c(1:38)
+dDireccion = c(nombres,"Naranjal","Matellini")
+
+dDireccion[23] = "Canaval Moreyra"
+dDireccion[24] = "Aramburu"
+dDireccion[25] = "Domingo Orue"
+dDireccion[10]="Caquetá"
+
+
+Ubicacion = data.frame(cUbicacion,dDireccion)
+
+View(Ubicacion)
+
+
+## 3) Tabla Estacion
+cEstacion<-c(1:38)
+cTipoEstacion<-sample(c(1),36,replace = TRUE)
+cTipoEstacion[37]<-2
+cTipoEstacion[38]<-2
+cTipoEstacion[23]<-3
+dEstado<-sample(c("Activo","Inactivo"),38,replace = TRUE)
+dNombre=dDireccion
+estaciones<-data.frame(cEstacion,cUbicacion,cTipoEstacion,dEstado)
+
+View(estaciones)
+
+## 4) Tabla Ruta
+cRuta<-c(1:13)
+RutaNombre<-c("A","B","C","SX","SXN","1","2","3","4","5","6","7","8")
+RutaTipo<-sample(c("Regular", "Expresso","SuperExpreso"),13,replace = TRUE)
+rutas<- data.frame(cRuta,RutaNombre,RutaTipo)
+
+View(rutas)
+
+## 5) Tabla Bus
+cBus<-c(1:400)
+cRuta = sample(c(1:13),400,replace = TRUE)
+c1<-rep(160,248)
+c2<-sample(c(80,40),152,replace = TRUE)
+BusCapacidad<-c(c1,c2)
+bus = data.frame(cBus,cRuta,BusCapacidad)
+
+View(bus)
+
+
+## 6) Tabla Estacion_Ruta
+cRuta<-sample(c(1:13),100,replace = TRUE)
+cEstacion<-sample(c(1:36),100,replace = TRUE)
+Estacion_Ruta<-data.frame(cRuta,cEstacion)
+Estacion_Ruta<-Estacion_Ruta[!duplicated(Estacion_Ruta), ]
+Estacion_Ruta<-Estacion_Ruta[order(Estacion_Ruta$cRuta,Estacion_Ruta$cEstacion),]
+View(Estacion_Ruta)
+
+
+## 7) Tabla_Tarjeta
+cTarjeta <-c(1:3)
+dTipoTarjeta = c("General","Discapacidad","Escolar")
+Tarjeta = data.frame(cTarjeta,dTipoTarjeta)
+View(Tarjeta)
+
+
+## 8) Tabla Usuarios
+n_usuario<-10000
+cUsuario= c(1:n_usuario)
+id_usuario = c(100001:110000)
+d_usuario_nombre = name(n_usuario)
+d_usuario_apellido = name(n_usuario)
+cTarjeta = sample(cTarjeta,10000,replace=TRUE)
+usuario = data.frame(cUsuario, id_usuario,d_usuario_nombre,d_usuario_apellido,cTarjeta)
+View(usuario)
+
+
+## 9) Tabla Transacciones
+n_transaccion<-1423500
+cTransaccion=(1:n_transaccion)
+cUsuario= sample(c(1:10000),n_transaccion,replace = TRUE)
+cEstacion = sample(c(1:36),n_transaccion,replace = TRUE)
+tipo_tarjeta<-usuario$cTarjeta[cUsuario]
+m_monto_transaccion<- ifelse(tipo_tarjeta == 1, 1.80, ifelse(tipo_tarjeta==3, 1.00,0.50))
+d_Tipo_Servicio= sample(c("Regular","Expreso"),n_transaccion,replace = TRUE)
+f_fecha_transaccion = date_stamp(n_transaccion, x = seq(as.Date("2014-11-16"), as.Date("2020-11-16"), by = "day"))
+transacciones<-data.frame(cTransaccion,cUsuario,cEstacion,m_monto_transaccion,d_Tipo_Servicio,f_fecha_transaccion)
+View(transacciones)
+
+
+
+
+##Write tables
+dbWriteTable(conexion,"Tipo_Estacion",TipoEstacion)
+dbWriteTable(conexion,"Ubicacion",Ubicacion)
+dbWriteTable(conexion,"Estacion",estaciones)
+dbWriteTable(conexion,"Ruta",rutas)
+dbWriteTable(conexion,"Bus",bus)
+dbWriteTable(conexion,"Estacion_Ruta",Estacion_Ruta)
+dbWriteTable(conexion,"Tarjeta",Tarjeta)
+dbWriteTable(conexion,"Usuario",usuario)
+dbWriteTable(conexion,"Transacciones",transacciones)
+dbListTables(conexion)
+
+
+
+
+#1.	Leer campos de tabla Usuario
+q1<-dbGetQuery(conexion,"select * from Usuario")
+View(q1)
+
+#2.	Consultar nombre, ubicación y estado de la estación ordenado por nombre
+q2<-dbGetQuery(conexion,"select Ubicacion.cUbicacion, Ubicacion.dDireccion, Estacion.dEstado from
+                        Ubicacion inner join Estacion using(cUbicacion) 
+                        order by dDireccion")
+View(q2)
+#3.	Consultar nombre, ubicación y estado de la estación ordenado por nombrey por estado activo
+q3<-dbGetQuery(conexion,"select Ubicacion.cUbicacion, Ubicacion.dDireccion, Estacion.dEstado from
+                        Ubicacion inner join Estacion using(cUbicacion) 
+                        order by dEstado, dDireccion")
+View(q3)
+
+#4.	Consultar el número de transacciones del año 2015
+q4<-dbGetQuery(conexion,"select count(*) 
+               from Transacciones where f_fecha_transaccion = 2015")
+View(q4)
+
+#5.	Consultar el monto recargado ayer en la estación Central
+q5<-dbGetQuery(conexion,"SELECT * FROM ((Transacciones INNER JOIN Estacion ON Transacciones.cEstacion = Estacion.cEstacion) 
+               INNER JOIN Ubicacion ON Estacion.cUbicacion = Ubicacion.cUbicacion)
+               WHERE cTipoEstacion=3
+               and f_fecha_transaccion = DATE_ADD(CURDATE(), INTERVAL -1 DAY)")
+View(q5)
+
+#6.	Consultar los usuarios con ids específicos
+
+dbListFields(conexion, "Usuario")
+id<-as.numeric(rstudioapi::showPrompt(title = "GAAAA", message = "Ingrese el Id del usuaio", default = 100001))
+q6<-dbGetQuery(conexion, fn$identity("select * from Usuario where Usuario.id_usuario='`id`' "))
+View(q6)
+
+#7.    Consultar los nombres y apellidos de los usuarios con discapacidad que se atendieron en el año 2015 
+# TODO Editar consulta
+
+dbListFields(conexion, "Usuario")
+dbListFields(conexion, "Transacciones")
+dbListFields(conexion, "Tarjeta")
+codigfo_discapacidad<-dbGetQuery(conexion, "select cTarjeta from Tarjeta where dTipoTarjeta = 'Discapacidad'")
+codigfo_discapacidad = codigfo_discapacidad[[1]]
+q7<-dbGetQuery(conexion, fn$identity("select Usuario.d_usuario_nombre, Usuario.d_usuario_apellido, Usuario.cTarjeta, Transacciones.f_fecha_transaccion
+                          from Usuario join Transacciones using (cUsuario) 
+                          where Usuario.cTarjeta='`codigfo_discapacidad`'  and Transacciones.f_fecha_transaccion like '2015%' "))
+
+View(q7)
+
+#8.    Actualizar un Campo de la tabla
+#Update tipo de tarjeta de un usuario
+dbListFields(conexion, "Tarjeta")
+tipoTarjeta<-as.character(rstudioapi::showPrompt(
+  title = "Update Usuario", message = "Ingrese nuevo tipo de Tarjeta: Escolar, Discapacidad o General: ", default = ""))
+
+id_tarjeta = dbGetQuery(conexion, fn$identity("select cTarjeta from Tarjeta where dTipoTarjeta = '`tipoTarjeta`'"))
+id_tarjeta = id_tarjeta[[1]]
+View(usuario)
+#Extrayendo datos
+codigo<-as.numeric(rstudioapi::showPrompt(title = "Update Usuario", message = "Ingrese Id de usuario: ", default = "100001"))
+codigo = codigo[[1]]
+class(codigo)
+codigo
+# Usuario antes de modificación 
+usuario<-dbGetQuery(conexion, sprintf("select * from Usuario where id_usuario = %d ", codigo))
+View(usuario)
+dbListFields(conexion, "Usuario")
+
+#Iniciando transaccion
+dbBegin(conexion) 
+dbExecute(conexion, sprintf("UPDATE Usuario SET cTarjeta=%d where id_usuario = %d", id_tarjeta, codigo))
+#Finalizando transaccion
+dbCommit(conexion)
+usuario<-dbGetQuery(conexion, sprintf("select * from Usuario where id_usuario = %d ", codigo))
+View(usuario)
+
+
+
+#Insert new Usuario
+nombre<-as.character(rstudioapi::showPrompt(title = "Nuevo Usuario", message = "Ingrese Nombre: ", default = "Diego"))
+nombre
+apellido<-as.character(rstudioapi::showPrompt(title = "Nuevo Usuario", message = "Ingrese Apellido: ", default = "Johnson"))
+apellido
+tipoTarjeta<-as.character(rstudioapi::showPrompt(
+  title = "Nuevo Usuario", message = "Ingrese tipo de Tarjeta: Escolar, Discapacidad o General: ", default = "Escolar"))
+tipoTarjeta
+
+cTarjeta = dbGetQuery(conexion, fn$identity("select cTarjeta from Tarjeta where dTipoTarjeta = '`tipoTarjeta`'"))
+cTarjeta = id_tarjeta[[1]]
+cTarjeta
+
+cUsuario = dbGetQuery(conexion, "SELECT cUsuario FROM Usuario ORDER BY cUsuario DESC LIMIT 1")
+cUsuario = as.numeric(cUsuario[[1]]) + 1
+cUsuario
+row_names = as.numeric(cUsuario)
+row_names
+id_usuario = as.numeric(cUsuario) + 100000
+id_usuario
+
+query <- fn$identity("INSERT INTO Usuario (row_names, cUsuario, id_usuario, d_usuario_nombre, d_usuario_apellido, cTarjeta) VALUES(`row_names`, `cUsuario`, `id_usuario`, '`nombre`', '`apellido`', '`cTarjeta`');")
+
+print(query) #checking (just in case)
+
+rsInsert <- dbSendQuery(conexion, query) #Insert
+dbClearResult(rsInsert) #Cleariong the result 
+usuario = dbGetQuery(conexion, "SELECT * FROM Usuario ORDER BY cUsuario DESC LIMIT 1")
+View(usuario)
+
+
+
+
+#########Serializacoin de Datos (traer de una DB hacia datasets)
+
+DB<-list()
+#BD[[1]]<- dbReadTable(conexion, "Usuario")
+#BD[[1]]
+
+#Nombres de las tablas
+tablas<-dbListTables(conexion)
+tablas
+
+#guardar cada tabla en una lista en memoria
+for(i in tables){
+  cat(i)
+  BD[[i]]<- dbReadTable(conexion, i)
+}
+
+#campos de la tabla film
+names(BD[[1]])
+#Back de la lista de data.sets que descargamos de nuestra base de datos
+save(DB, file = "Backup1.RData")
+#Cargar los archivos en el backup
+load(file = "Backup.RData")
+
+
+dbDisconnect(conexion)
