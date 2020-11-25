@@ -12,7 +12,7 @@ library(ggplot2)
 library(ade4)
 library("e1071")
 
-source(file="Codigo/Configuracion.R")
+#source(file="Codigo/Configuracion.R")
 
 #Read
 positivos_covid_data = read_xlsx("Data/positivos_covid.xlsx")
@@ -694,6 +694,7 @@ View(q30)
 q30
 
 
+### TODO: MODIFICAR VARIABLES CON LAS LECTURAS INICIALES
 
 ##              GRAFICOS
 
@@ -702,42 +703,120 @@ library(ggplot2)
 library(lubridate)
 library(ggforce)
 
+install.packages("XML")
+install.packages("rjson")
+library(jsonlite)
+library(XML)
+library(readxl)
+library(dplyr)
 
-Estado Civil y Cantidad de Fallecidos SINADEF DATABASE
+fallecidos <- read_excel("data/fallecidos_sinadef.xlsx")
+positivos_covid <- read.csv2("data/positivos_covid.csv")
+fallecidos_covid <- read.csv2(file = "data/fallecidos_covid.csv")
+#fallecidos_covidjson <-toJSON(fallecidos_covid)
+#write_json(fallecidos_covidjson, "data/fallecidos_covid.json")
+
+#glimpse(fallecidos)
+
+fallecidos <-fallecidos
+fallecidos$Nº = NULL
+fallecidos$`COD# UBIGEO DOMICILIO` = NULL
+fallecidos$AÑO = NULL
+fallecidos$MES = NULL
+fallecidos$`CAUSA A (CIE-X)`<-NULL
+fallecidos$`CAUSA B (CIE-X)`<-NULL
+fallecidos$`CAUSA C (CIE-X)`<-NULL
+fallecidos$`CAUSA D (CIE-X)`<-NULL
+fallecidos$`CAUSA E (CIE-X)`<-NULL
+fallecidos$`CAUSA F (CIE-X)`<-NULL
+fallecidos$EDAD<-strtoi(fallecidos_clean$EDAD)
+
+glimpse(fallecidos)
+
+
+
+fallecidos_covid <- fallecidos_covid %>% filter(SEXO == "MASCULINO"|SEXO == "FEMENINO")
+fallecidos_covid$FECHA_CORTE<-NULL
+fallecidos_covid$UUID<-NULL
+fallecidos_covid$FECHA_FALLECIMIENTO<- strptime(fallecidos_covid$FECHA_FALLECIMIENTO, "%Y%m%d")
+fallecidos_covid$FECHA_NAC<-strptime(fallecidos_covid$FECHA_NAC, "%Y%m%d")
+glimpse(fallecidos_covid)
+
+
+positivos_covid$FECHA_CORTE = NULL
+positivos_covid$UUID = NULL
+positivos_covid$FECHA_RESULTADO <- strptime(positivos_covid$FECHA_RESULTADO,"%Y%m%d")
+glimpse(positivos_covid)
+View(positivos_covid)
+
+
+
+causas <- c(fallecidos$`DEBIDO A (CAUSA A)`, fallecidos$`DEBIDO A (CAUSA B)`, fallecidos$`DEBIDO A (CAUSA C)`,
+            fallecidos$`DEBIDO A (CAUSA D)`, fallecidos$`DEBIDO A (CAUSA E)`)
+causas <- unique(causas)
+causas <- gsub("Ó", "O", causas)
+causas <- gsub("Á", "A", causas)
+causas <- gsub("É", "E", causas)
+causas <- gsub("Í", "I", causas)
+causas <- gsub("Ú", "U", causas)
+causas <- unique(causas)
+id<-c(1:NROW(causas))
+CAUSAS = data.frame(id, causas)
+colnames(CAUSAS)[2]  <- "nombre"
+
+fallecidos[16:21]<- data.frame(lapply(fallecidos[16:21], function(x) { gsub("Á", "A", x) }))
+fallecidos[16:21]<- data.frame(lapply(fallecidos[16:21], function(x) { gsub("É", "E", x) }))
+fallecidos[16:21]<- data.frame(lapply(fallecidos[16:21], function(x) { gsub("Í", "I", x) }))
+fallecidos[16:21]<- data.frame(lapply(fallecidos[16:21], function(x) { gsub("Ó", "O", x) }))
+fallecidos[16:21]<- data.frame(lapply(fallecidos[16:21], function(x) { gsub("Ú", "U", x) }))
+
+
+
+indicesA<-match(fallecidos$`DEBIDO A (CAUSA A)`,CAUSAS$nombre)
+indicesB<-match(fallecidos$`DEBIDO A (CAUSA B)`,CAUSAS$nombre)
+indicesC<-match(fallecidos$`DEBIDO A (CAUSA C)`,CAUSAS$nombre)
+indicesD<-match(fallecidos$`DEBIDO A (CAUSA D)`,CAUSAS$nombre)
+indicesE<-match(fallecidos$`DEBIDO A (CAUSA E)`,CAUSAS$nombre)
+indicesF<-match(fallecidos$`DEBIDO A (CAUSA F)`,CAUSAS$nombre)
+
+indicesF
+
+
+#Estado Civil y Cantidad de Fallecidos SINADEF DATABASE
 
 g1 <- fallecidos %>%  group_by(`ESTADO CIVIL`) %>% summarise( Cantidad = n())
 g1 <- g1[order(-g1$Cantidad),]
 g1 %>%ggplot(aes(y = reorder(`ESTADO CIVIL`,Cantidad), x =Cantidad, fill=`ESTADO CIVIL`)) + geom_bar(stat="identity")+ theme(legend.position='none') +ggtitle("Estado Civil y Cantidad de Fallecidos SINADEF DATABASE") 
 
-Muertos por sexo
+#Muertos por sexo
 
 options(scipen=10000)
 g2 <- fallecidos %>%  group_by(SEXO) %>% summarise( Cantidad = n())
 g2 <- g2[c(1,3),]
 g2 %>%ggplot(aes(y =SEXO, x =Cantidad, fill=SEXO)) + geom_bar(stat="identity")+ theme(legend.position='none') +ggtitle("Muertos por sexo") %>% scale_x_continuous()
 
-Cantidad de fallecidos del 2017 al 2020
+#Cantidad de fallecidos del 2017 al 2020
 
 g3<- fallecidos %>%  group_by("YEAR" = year(FECHA)) %>% summarise( Cantidad = n())
 g3 %>%ggplot(aes(y =Cantidad, x =YEAR,fill=YEAR)) + geom_bar(stat="identity")+ theme(legend.position='none') +ggtitle("Cantidad de fallecidos del 2017 al 2020") 
 
-Cantidad de fallecidos por COVID en serie de tiempo
+#Cantidad de fallecidos por COVID en serie de tiempo
 
 g4<- fallecidos_covid %>%  group_by("Mes" = month(as.Date(FECHA_FALLECIMIENTO))) %>% summarise( Cantidad = n())
 g4
 g4 %>%ggplot(aes(y =Cantidad, x = Mes )) + geom_bezier(stat="identity")+ theme(legend.position='none') +ggtitle("Cantidad de fallecidos por COVID en serie de tiempo") + scale_x_continuous(labels=as.character(month.abb[g4$Mes] ),breaks=g4$Mes)
 
-Diferencia de sexo en positivos de covid
+#Diferencia de sexo en positivos de covid
 
 g5<- fallecidos_covid %>%  group_by("Sexo" = SEXO) %>% summarise( Cantidad = n())
 g5 %>%ggplot(aes(y =Cantidad, x = Sexo ,fill=Sexo)) + geom_bar(stat="identity")+ theme(legend.position='none') +ggtitle("Diferencia de sexo en positivos de covid")
 
-Diferencia de sexo entre fallecidos en junio
+#Diferencia de sexo entre fallecidos en junio
 
 g6<- fallecidos_covid %>% filter(PROVINCIA=="LIMA" & month(FECHA_FALLECIMIENTO)==6)
 g6 %>%ggplot(aes(y =EDAD_DECLARADA, x =SEXO ,fill=SEXO)) +  geom_boxplot() +ggtitle("Diferencia de sexo entre fallecidos en junio")
 
-Comparación de fallecidos en departamentos, mes de Octubre
+#Comparación de fallecidos en departamentos, mes de Octubre
 
 g7_1<- fallecidos_covid %>% filter(DEPARTAMENTO!="LIMA" & month(FECHA_FALLECIMIENTO)==8 & year(FECHA_FALLECIMIENTO)== 2020)
 g7_1
@@ -751,7 +830,7 @@ g7 %>%ggplot(aes(Fallecidos,FallecidosCovid ,color =DEPARTAMENTO)) +  geom_point
 
 
 
-positivos por covid vs fallecidos por covid en Lima en Julio
+#positivos por covid vs fallecidos por covid en Lima en Julio
 
 g8_1<- fallecidos_covid %>% filter(DEPARTAMENTO=="LIMA" & month(FECHA_FALLECIMIENTO)==7 & year(FECHA_FALLECIMIENTO)== 2020)
 g8_2<- positivos_covid %>% filter(DEPARTAMENTO=="LIMA" & month(FECHA_RESULTADO)==7 & year(FECHA_RESULTADO)== 2020)
@@ -764,7 +843,7 @@ g8 %>%ggplot(aes(Positivos,FallecidosCovid ,color =DISTRITO)) +  geom_point()+gg
 
 
 
-Positivos de Covid en Cajamarca por día
+#Positivos de Covid en Cajamarca por día
 
 g_9<- positivos_covid%>% filter(DEPARTAMENTO=="CAJAMARCA" & month(FECHA_RESULTADO)==7 & year(FECHA_RESULTADO)== 2020)
 g_9 %>% ggplot(aes(as.factor( day(FECHA_RESULTADO)),EDAD )) +  geom_boxplot()+ggtitle("Positivos de Covid en Cajamarca") 
