@@ -2,9 +2,12 @@
 
 source(file="Configuracion.R")
 #Read
-positivos_covid_data = read_xlsx("Data/positivos_covid.xlsx")
-fallecidos_covid_data = read.csv2("Data/fallecidos_covid.csv", encoding = "Latin-1",header = TRUE, na.strings=c(""," ","NA"))
-fallecidos_sinadef = read.csv2("Data/fallecidos_sinadef.csv", encoding = "Latin-1", header = TRUE, na.strings=c(""," ","NA"))
+positivos_covid_data = read_xlsx("../../Data/positivos_covid.xlsx")
+fallecidos_covid_data = read.csv2("../../Data/fallecidos_covid.csv", encoding = "Latin-1",header = TRUE, na.strings=c(""," ","NA"))
+fallecidos_sinadef = read.csv2("../../Data/fallecidos_sinadef.csv", encoding = "Latin-1", header = TRUE, na.strings=c(""," ","NA"))
+positivos<-positivos_covid_data
+fallecidos<- fallecidos_sinadef
+fallecidos_covid <-fallecidos_covid_data
 #View
 View(positivos_covid_data)
 View(fallecidos_covid_data)

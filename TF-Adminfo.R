@@ -15,7 +15,7 @@ library("e1071")
 #source(file="Codigo/Configuracion.R")
 
 #Read
-positivos_covid_data = read_xlsx("Data/positivos_covid.xlsx")
+positivos_covid_data = read_xlsx("Da    ")
 fallecidos_covid_data = read.csv2("Data/fallecidos_covid.csv", encoding = "Latin-1",header = TRUE, na.strings=c(""," ","NA"))
 fallecidos_sinadef = read.csv2("Data/fallecidos_sinadef.csv", encoding = "Latin-1", header = TRUE, na.strings=c(""," ","NA"))
 covid_19 = read_xlsx('Data/Covid-19 Daily Financial Report.xlsx')
